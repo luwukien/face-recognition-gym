@@ -5,8 +5,8 @@ import imagehash
 
 SOURCE_FOLDER = '/home/luwukien/Project/Personal/MemberPhoto'
 
-CLEAN_FOLDER = 'data/cleaned_photos'
-TRASH_FOLDER = 'data/redudant_photos'
+CLEAN_FOLDER = '/home/luwukien/Project/Personal/VisionGym/data/cleaned_photos'
+TRASH_FOLDER = '/home/luwukien/Project/Personal/VisionGym/data/redudant_photos'
 os.makedirs(CLEAN_FOLDER, exist_ok=True)
 os.makedirs(TRASH_FOLDER, exist_ok=True)
 
