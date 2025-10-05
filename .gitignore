@@ -1,3 +1,6 @@
 cleaned_photos
 redudant_photos
 data
+encodings.pickle
+scripts/__pycache__
+data/members.csv
