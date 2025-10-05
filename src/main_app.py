@@ -2,6 +2,7 @@ import face_recognition
 import pickle
 import cv2
 import pandas as pd
+import numpy as np
 
 #Loading file encodings.pickle
 pickle_file_path = '/home/luwukien/Project/Personal/VisionGym/encodings.pickle'
@@ -40,32 +41,41 @@ while True:
 
   for encoding in encodings:
     #Compare this encoding with encoding in file encodings.pkl
-    matches = face_recognition.compare_faces(data["encodings"], encoding)
+    face_distances = face_recognition.face_distance(data["encodings"], encoding)
+
+    best_match_index =  np.argmin(face_distances)
+    best_match_distance = face_distances[best_match_index]
+
+    best_match_id = data["names"][best_match_index]
+
+    print(f"Best match is {best_match_id} with distance {best_match_distance:.4f}")
 
     #Default name is Unknown
     name = "Unknown"
 
-    if True in matches:
+    if best_match_distance < 0.4:
       #Finding location index which has True value
-      matchIdxs = [i for (i, b) in enumerate(matches) if b]
+      # matchIdxs = [i for (i, b) in enumerate(matches) if b]
 
-      #Counting 
-      counts = {}
-      for i in matchIdxs:
-        #Getting member id corresponded 
-        member_id = data["names"][i]
-        #Counting frequency the numbers of id member 
-        counts[member_id] = counts.get(member_id, 0) + 1
+      # #Counting 
+      # counts = {}
+      # for i in matchIdxs:
+      #   #Getting member id corresponded 
+      #   member_id = data["names"][i]
+      #   #Counting frequency the numbers of id member 
+      #   counts[member_id] = counts.get(member_id, 0) + 1
       
-      #Choose a person who the highest count
-      name = max(counts, key=counts.get)
+      # #Choose a person who the highest count
+      # name = max(counts, key=counts.get)
 
+      name = best_match_id
       try:
         full_name = df_members.loc[name, 'Tên Hội viên']
         name = full_name
       except KeyError:
         name = f"{name} (No info)"
-  names.append(name)
+      
+    names.append(name)
 
   #Draw box into the screen
   for ((top, right, bottom, left), name)in zip(boxes, names):
