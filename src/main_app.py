@@ -3,6 +3,38 @@ import pickle
 import cv2
 import pandas as pd
 import numpy as np
+import threading
+import time 
+from PIL import ImageFont, ImageDraw, Image
+
+#Class camera using multithreading 
+class WebcamStream:
+  def __init__(self, src=0):
+    #Initialize webcamcvtColor
+    self.stream = cv2.VideoCapture(src, cv2.CAP_V4L2)
+    # Reading first frame
+    (self.ret, self.frame) = self.stream.read()
+    #Variable to stop thread
+    self.stopped = False
+
+  def start(self):
+    threading.Thread(target=self.update, args=(), daemon=True).start()
+    return self
+  
+  def update(self):
+    if not self.ret:
+      return
+    while True:
+      if self.stopped:
+        return
+      (self.ret, self.frame) = self.stream.read()
+  
+  def read(self):
+    return self.frame 
+  
+  def stop(self):
+    self.stopped = True
+    self.stream.release()
 
 #Loading file encodings.pickle
 pickle_file_path = '/home/luwukien/Project/Personal/VisionGym/encodings.pickle'
@@ -17,16 +49,13 @@ except Exception as e:
 #Loading members list from file .csv
 df_members = pd.read_csv("/home/luwukien/Project/Personal/VisionGym/data/members.csv", index_col="Mã hội viên")
 
-#Initialize webcamcvtColor
-cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+print("Start thread camera")
+vs = WebcamStream(src=0).start()
+time.sleep(2.0)
 
 while True:
-  ret, frame = cap.read()
-  #Read a frame from webcam
-  #ret is a boolean variable. If it read a frame, it could return true. 
-  if not ret:
-    print("[ERROR] Cannot read frame from webcam. End!")
-    break
+  #Read a frame from webcam thread
+  frame = vs.read()
   
   #Detect faces and calc encodings
   rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -53,7 +82,7 @@ while True:
     #Default name is Unknown
     name = "Unknown"
 
-    if best_match_distance < 0.4:
+    if best_match_distance < 0.5:
       #Finding location index which has True value
       # matchIdxs = [i for (i, b) in enumerate(matches) if b]
 
@@ -90,13 +119,12 @@ while True:
     #Display last frame which processed 
     cv2.imshow("The system check-in face in gym", frame)
 
-    key = cv2.waitKey(1) & 0xFF
-
-    if key == ord("q"):
-        break
+  key = cv2.waitKey(1) & 0xFF
+  if key == ord("q"):
+      break
 
 print("Cleaning and exit.....")
-cap.release()
+vs.stop()
 cv2.destroyAllWindows()
 
 
