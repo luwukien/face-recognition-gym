@@ -103,20 +103,29 @@ while True:
         name = full_name
       except KeyError:
         name = f"{name} (No info)"
-      
     names.append(name)
+
+  font_path = "/home/luwukien/Mics/Font/Roboto/static/Roboto-Regular.ttf" 
+  font = ImageFont.truetype(font_path, 20)
+
+    # Convert frame OpenCV (BGR) to Pillow (RGB)
+  pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+  
+  # Initalize a object to draw
+  draw = ImageDraw.Draw(pil_img)
 
   #Draw box into the screen
   for ((top, right, bottom, left), name)in zip(boxes, names):
     #Draw the rectangle around face
     cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
 
-    #Draw the background for name member
-    y = top - 15 if top - 15 > 15 else top + 15
-    cv2.putText(frame, name, (left, y), cv2.FONT_HERSHEY_SIMPLEX,
-                0.75, (0, 255, 0), 2)
-    
-    #Display last frame which processed 
+    y = top - 25 if top - 25 > 0 else top + 10
+    draw.text((left, y), name, font=font, fill=(0, 255, 0))
+
+    # Convert Pillow to frame OpenCV to display
+    frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+
+    #Display frame
     cv2.imshow("The system check-in face in gym", frame)
 
   key = cv2.waitKey(1) & 0xFF
