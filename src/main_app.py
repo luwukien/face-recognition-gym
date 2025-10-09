@@ -47,7 +47,7 @@ except Exception as e:
   print(f"An error occurred while loading the pickle file: {e}")
 
 #Loading members list from file .csv
-df_members = pd.read_csv("/home/luwukien/Project/Personal/VisionGym/data/members.csv", index_col="Mã hội viên")
+df_members = pd.read_csv("/home/luwukien/Project/Personal/VisionGym/data/members.csv", index_col=["Mã hội viên", "Ngày đăng ký"])
 
 print("Start thread camera")
 vs = WebcamStream(src=0).start()
@@ -66,18 +66,15 @@ while True:
   encodings = face_recognition.face_encodings(rgb_frame, boxes)
 
   #Create a empty list to save names who detected faces.
-  names = []
+  persons_info = []
 
   for encoding in encodings:
     #Compare this encoding with encoding in file encodings.pkl
     face_distances = face_recognition.face_distance(data["encodings"], encoding)
-
     best_match_index =  np.argmin(face_distances)
     best_match_distance = face_distances[best_match_index]
 
-    best_match_id = data["names"][best_match_index]
-
-    print(f"Best match is {best_match_id} with distance {best_match_distance:.4f}")
+    register_date = "" 
 
     #Default name is Unknown
     name = "Unknown"
@@ -97,13 +94,18 @@ while True:
       # #Choose a person who the highest count
       # name = max(counts, key=counts.get)
 
-      name = best_match_id
+      member_id = data["names"][best_match_index]
       try:
-        full_name = df_members.loc[name, 'Tên Hội viên']
-        name = full_name
+        member_info = df_members.loc[member_id]
+
+        full_name = member_info['Tên Hội viên']
+        date_from_csv = member_info['Ngày đăng ký']
+
+        name = str(full_name).title()
+        register_date = str(date_from_csv).split(' ')[0]
       except KeyError:
-        name = f"{name} (No info)"
-    names.append(name)
+        name = f"{member_id} (No info)"
+    persons_info.append({"name": name, "date": register_date})
 
   font_path = "/home/luwukien/Mics/Font/Roboto/static/Roboto-Regular.ttf" 
   font = ImageFont.truetype(font_path, 20)
@@ -115,12 +117,12 @@ while True:
   draw = ImageDraw.Draw(pil_img)
 
   #Draw box into the screen
-  for ((top, right, bottom, left), name)in zip(boxes, names):
+  for ((top, right, bottom, left), person)in zip(boxes, persons_info):
     #Draw the rectangle around face
-    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+    draw.rectangle(((left, top), (right, bottom)), outline=(0, 255, 0), width=2)
 
     y = top - 25 if top - 25 > 0 else top + 10
-    draw.text((left, y), name, font=font, fill=(0, 255, 0))
+    draw.text((left, y), f"{person['name']} ({person['date']})", font=font, fill=(0, 255, 0))
 
     # Convert Pillow to frame OpenCV to display
     frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
