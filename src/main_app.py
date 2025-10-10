@@ -38,6 +38,8 @@ class WebcamStream:
 
 #Loading file encodings.pickle
 pickle_file_path = '/home/luwukien/Project/Personal/VisionGym/encodings.pickle'
+#Loading file font
+font_path = "/home/luwukien/Mics/Font/Roboto/static/Roboto-Regular.ttf" 
 try:  
   with open(pickle_file_path, "rb") as f:
     data = pickle.load(f)
@@ -47,11 +49,17 @@ except Exception as e:
   print(f"An error occurred while loading the pickle file: {e}")
 
 #Loading members list from file .csv
-df_members = pd.read_csv("/home/luwukien/Project/Personal/VisionGym/data/members.csv", index_col=["Mã hội viên", "Ngày đăng ký"])
+df_members = pd.read_csv("/home/luwukien/Project/Personal/VisionGym/data/members.csv", index_col="Mã hội viên")
 
 print("Start thread camera")
 vs = WebcamStream(src=0).start()
-time.sleep(2.0)
+time.sleep(3.0)
+
+try:
+  font = ImageFont.truetype(font_path, 20)
+except IOError:
+  print(f"Error: Cannot find file font at '{font_path}'. Using default font")
+  font = ImageFont.load_default()
 
 while True:
   #Read a frame from webcam thread
@@ -79,7 +87,7 @@ while True:
     #Default name is Unknown
     name = "Unknown"
 
-    if best_match_distance < 0.5:
+    if best_match_distance < 0.45:
       #Finding location index which has True value
       # matchIdxs = [i for (i, b) in enumerate(matches) if b]
 
@@ -107,9 +115,6 @@ while True:
         name = f"{member_id} (No info)"
     persons_info.append({"name": name, "date": register_date})
 
-  font_path = "/home/luwukien/Mics/Font/Roboto/static/Roboto-Regular.ttf" 
-  font = ImageFont.truetype(font_path, 20)
-
     # Convert frame OpenCV (BGR) to Pillow (RGB)
   pil_img = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
   
@@ -118,11 +123,19 @@ while True:
 
   #Draw box into the screen
   for ((top, right, bottom, left), person)in zip(boxes, persons_info):
+
+    name_to_draw = person["name"]
+    date_to_draw = person["date"]
+
     #Draw the rectangle around face
     draw.rectangle(((left, top), (right, bottom)), outline=(0, 255, 0), width=2)
 
-    y = top - 25 if top - 25 > 0 else top + 10
-    draw.text((left, y), f"{person['name']} ({person['date']})", font=font, fill=(0, 255, 0))
+    #Location to draw text
+    y = top - 50 if top - 50 > 0 else top + 10
+
+    draw.text((left, y), name_to_draw , font=font, fill=(0, 255, 0))
+
+    draw.text((left, y + 25), date_to_draw , font=font, fill=(225, 255, 0))
 
     # Convert Pillow to frame OpenCV to display
     frame = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
